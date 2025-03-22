@@ -92,21 +92,6 @@ def control_trial():
         pygame.time.delay(500)  # Pause for 0.5 second
         pygame.event.clear()  # Clear any keypresses from the previous trial
 
-    # Display control trial completion message
-    screen.fill((255, 255, 255))
-    draw_text("The Control Trial is Now Complete.", (0, 0, 0), (WIDTH // 2, HEIGHT // 3), font)
-    draw_text("Press SPACE for the Official Test.", (0, 0, 0), (WIDTH // 2, HEIGHT // 2), intro_font)
-    pygame.display.flip()
-
-    waiting = True
-    while waiting:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                return
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                waiting = False
-
     return results
 
 # Run experiment
