@@ -1,3 +1,205 @@
+# Stroop Test Final 
+
+```python
+import pygame
+import random
+import time
+import csv
+import sys
+
+# Initialize pygame
+pygame.init()
+
+# Screen settings
+#WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)  # Or use a fixed size like (800, 600)
+WIDTH = pygame.display.get_surface().get_width() # Get screen width and height
+HEIGHT = pygame.display.get_surface().get_height()
+pygame.display.set_caption("Stroop Test")
+
+# Define colors
+COLORS = {"RED": (255, 0, 0), "BLUE": (0, 0, 255), "GREEN": (0, 255, 0), "YELLOW": (255, 244, 79)}
+COLOR_NAMES = list(COLORS.keys())
+KEY_MAPPING = {pygame.K_z: "RED", pygame.K_x: "BLUE", pygame.K_n: "GREEN", pygame.K_m: "YELLOW"}
+
+# Fonts
+colors_font = pygame.font.Font(None, 90)
+intro_font = pygame.font.Font(None, 60)
+
+#Track participant names
+username = sys.argv[1] if len(sys.argv) > 1 else "unknown"
+
+# Function to display text
+def draw_texts(texts, color, font):
+    line_height = font.get_linesize()
+    total_text_height = len(texts) * line_height
+    start_y = (HEIGHT - total_text_height) // 2  # Center vertically
+
+    # Render text surfaces and get their rects
+    text_surfaces = []
+    for i, text in enumerate(texts):
+        text_surface = font.render(text, True, color)
+        text_rect = text_surface.get_rect(center=(WIDTH // 2, start_y + i * line_height))
+        text_surfaces.append((text_surface, text_rect))
+
+    for text_surface, text_rect in text_surfaces:
+        screen.blit(text_surface, text_rect)    
+
+# Show instructions
+def show_instructions():
+    steps = [
+        [
+            "Welcome to the Stroop Test!",
+            "(press SPACE to continue)",
+        ],
+        [
+            "Your task is to identify the COLOR of",
+            "the word, not the word itself",
+            "(press SPACE to continue)",
+        ],
+        [
+            "Press the corresponding key to the color:",
+            "(press SPACE to continue)",
+        ],
+        [
+            "Z = Red, X = Blue, N = Green, M = Yellow",
+            "(press SPACE to continue)",
+        ],
+        [
+            "Press SPACE to start the control trial",
+            "All words are their corresponding colour",
+        ]
+    ]
+    
+    # Calculate the total height of the instructions to center them
+    #total_height = len(steps) * 50  # 50 pixels between each line
+    #start_y = (HEIGHT - total_height) // 2  # Start in the vertical center of the screen
+    
+    for step in steps:
+        screen.fill((255, 255, 255))  # Clear screen
+        draw_texts(step, (0, 0, 0), intro_font)  # Centered horizontally and vertically
+        pygame.display.flip()
+
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return False
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    waiting = False
+        #start_y += 50  # Space between line
+
+    return True
+
+def save_results(filename, results):
+    with open(filename, mode="a", newline="") as file: # Save results to CSV
+        writer = csv.writer(file)  # Header
+        writer.writerows(results)  # Write all trial data
+
+# Control trial (where word and color match)
+def control_trial():
+    control_count = 5  # 10 control trials
+    results = []
+    
+    for _ in range(control_count):
+        word = random.choice(COLOR_NAMES)
+        color = word  # Set word and color to be the same
+        color_rgb = COLORS[color]
+        
+        screen.fill((255, 255, 255))
+        draw_texts([word], color_rgb, colors_font)
+        pygame.display.flip()
+        
+        # Start timing response
+        start_time = time.time()
+        response = None
+        
+        while response is None:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+                if event.type == pygame.KEYDOWN and event.key in KEY_MAPPING:
+                    response = KEY_MAPPING[event.key]
+                    reaction_time = time.time() - start_time
+                    correct = response == color
+                    results.append((username, word, color, response, correct, reaction_time))
+        
+        pygame.time.delay(500)  # Pause for 0.5 second
+        pygame.event.clear()  # Clear any keypresses from the previous trial
+    save_results("control_results.csv", results)
+    print("Results saved to control_results.csv")
+
+    return results
+
+# Run experiment
+def stroop_test():
+    if not show_instructions():
+        return
+    
+    # Run control trials first
+    control_results = control_trial()
+    
+    # After control, show the instructions for the main Stroop test
+    if control_results is not None:
+        message = [
+                   "The control trial is now complete.", 
+                   "Press SPACE to start the official Stroop test",
+                  ]
+        screen.fill((255, 255, 255))
+        draw_texts(message, (0, 0, 0), intro_font)
+        pygame.display.flip()
+        
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    waiting = False
+
+    # Now run the official Stroop test
+    running = True
+    trial_count = 5  # Number of trials
+    results = []
+
+    # Main Stroop Test Loop
+    for _ in range(trial_count):
+        word = random.choice(COLOR_NAMES)
+        color = random.choice(COLOR_NAMES)
+        color_rgb = COLORS[color]
+        
+        screen.fill((255, 255, 255))
+        draw_texts([word], color_rgb, colors_font)
+        pygame.display.flip()
+        
+        start_time = time.time()
+        response = None
+        
+        while response is None:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+                if event.type == pygame.KEYDOWN and event.key in KEY_MAPPING:
+                    response = KEY_MAPPING[event.key]
+                    reaction_time = time.time() - start_time
+                    correct = response == color
+                    results.append((username, word, color, response, correct, reaction_time))
+        
+        pygame.time.delay(500)  # Pause for 0.5 second
+        pygame.event.clear()  # Clear any keypresses from the previous trial
+
+    save_results("stroop_results.csv", results)
+    print("Results saved to stroop_results.csv")
+    pygame.quit()  # Quit Pygame AFTER saving results
+
+# Run the Stroop test
+stroop_test()
+```
+
 # Marina's Stroop copy
 
 ```python
