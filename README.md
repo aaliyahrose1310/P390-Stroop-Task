@@ -162,7 +162,7 @@ def stroop_test():
 # Run the Stroop test
 stroop_test()
 ```
-#Aaliyah's Stroop copy
+# Aaliyah's Stroop copy
 
 ```python
 import pygame
